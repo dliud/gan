@@ -1,8 +1,9 @@
 import torch
 import torch.nn as nn
 
+
 class Discriminator(torch.nn.Module):
-    def __init__(self, input_dim, output_dim=1, dropout_rate = .1):
+    def __init__(self, input_dim, output_dim=1, dropout_rate=.1):
         """
         right now only doing binary classification, so output_dim = 1
         3 hidden layers
@@ -25,7 +26,7 @@ class Discriminator(torch.nn.Module):
             nn.Dropout(dropout_rate)
         )
         self.output = nn.Sequential(
-            nn.Linear(64, output_dim), 
+            nn.Linear(64, output_dim),
             nn.Sigmoid()
         )
         # could be 10 depending on task
@@ -43,7 +44,7 @@ class Discriminator(torch.nn.Module):
 
 
 class Generator(torch.nn.Module):
-    def __init__(self, input_dim, output_dim=784, dropout_rate = .1):
+    def __init__(self, input_dim, output_dim=784, dropout_rate=.1):
         """
         no dropout
         3 hidden layers
@@ -66,14 +67,12 @@ class Generator(torch.nn.Module):
         )
         self.output = nn.Sequential(
             nn.Linear(768, output_dim),
-            nn.Tanh()  
+            nn.Tanh()
         )  # transformation: (coords[i] - 128) / 128
-    
+
     def forward(self, input):
         input = self.hidden1(input)
         input = self.hidden2(input)
         input = self.hidden3(input)
         input = self.output(input)
         return input
-
-    
