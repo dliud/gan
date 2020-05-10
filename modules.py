@@ -11,22 +11,22 @@ class Discriminator(torch.nn.Module):
         super(Discriminator, self).__init__()
 
         self.hidden1 = nn.Sequential(
-            nn.Linear(input_dim, 768),
+            nn.Linear(input_dim, 512),
             nn.LeakyReLU(0.01),
             nn.Dropout(dropout_rate)
         )
         self.hidden2 = nn.Sequential(
-            nn.Linear(768, 256),
+            nn.Linear(512, 128),
             nn.LeakyReLU(negative_slope=0.01),
             nn.Dropout(dropout_rate)
         )
         self.hidden3 = nn.Sequential(
-            nn.Linear(256, 64),
+            nn.Linear(128, 32),
             nn.LeakyReLU(negative_slope=0.01),
             nn.Dropout(dropout_rate)
         )
         self.output = nn.Sequential(
-            nn.Linear(64, output_dim),
+            nn.Linear(32, output_dim),
             nn.Sigmoid()
         )
         # could be 10 depending on task
@@ -51,24 +51,24 @@ class Generator(torch.nn.Module):
         """
         super(Generator, self).__init__()
         self.hidden1 = nn.Sequential(
-            nn.Linear(input_dim, 64),
+            nn.Linear(input_dim, 32),
             nn.LeakyReLU(negative_slope=0.01),
             nn.Dropout(dropout_rate)
         )
         self.hidden2 = nn.Sequential(
-            nn.Linear(64, 256),
+            nn.Linear(32, 128),
             nn.LeakyReLU(negative_slope=0.01),
             nn.Dropout(dropout_rate)
         )
         self.hidden3 = nn.Sequential(
-            nn.Linear(256, 768),
+            nn.Linear(128, 512),
             nn.LeakyReLU(negative_slope=0.01),
             nn.Dropout(dropout_rate)
         )
         self.output = nn.Sequential(
-            nn.Linear(768, output_dim),
+            nn.Linear(512, output_dim),
             nn.Tanh()
-        )  # transformation: (coords[i] - 128) / 128
+        )
 
     def forward(self, input):
         input = self.hidden1(input)
