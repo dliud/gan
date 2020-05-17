@@ -3,20 +3,18 @@ import torch
 import numpy as np
 from PIL import Image
 
-def vector_to_img(vect, filename):
-    #input: tensor of len 784 or floats form -1.0 to 1.0
+#converts, displays, and saves images
+def vector_to_img( vect, filename, display = False):
+    #input: tensor of len 784 of floats form -1.0 to 1.0
     vect = vect.detach().numpy()
     vect = vect.reshape(-1, 28)
     img = Image.fromarray((vect+1)*128)
-    img.show()
-    #img.save(filename)
+    img = img.convert("L")
+    if display: img.show()
+    img.save(filename)
 
 
 
-"""
-should not plot discriminator and generator losses on the same graph unlsss normalize
-this method would only work if discriminator_steps = 1
-"""
 def plot_loss(lst_epochs, lst_disc_loss, lst_gen_loss, title):
     """
     lst_epochs is just the epoch

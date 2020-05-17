@@ -5,9 +5,10 @@ import modules
 
 
 class GAN:
-    def __init__(self, discriminator_steps=2, disc_input_dim=784, 
+    def __init__(self, id, discriminator_steps=2, disc_input_dim=784, 
                 gen_input_dim=100, batch_size=10, lr_disc=.0002, 
                 lr_gen=.0002):
+        self.id = id
         self.discriminator_steps = discriminator_steps
         self.disc_input_dim = disc_input_dim
         self.gen_input_dim = gen_input_dim
@@ -73,7 +74,7 @@ class GAN:
 
         return error_f
 
-    def train(self, data_loader, num_epoch = 100):
+    def train(self, data_loader, num_epoch=100):
         """
         For each epoch in num_epochs:
             Train discriminator for discriminator_step iterations.
@@ -85,30 +86,31 @@ class GAN:
                 2. update generator via SGA
         """
         for epoch in range(num_epoch):
-            print(epoch)
-            self.lst_epochs.append(epoch) # FOR PLOTTING
-
-            if epoch%10 == 0: self.sampleImages(epoch)
-            for n_batch, real_data in enumerate(data_loader): #n_batch 0,1,2..., real_data (batch_size, 784)
-                loss = 0
+            if (epoch % 10) == 0:
+                self.sampleImages(epoch)
+            disc_loss, gen_loss = 0, 0
+            for n_batch, real_data in enumerate(data_loader):  # n_batch 0,1,2..., real_data (batch_size, 784)
                 for _ in range(self.discriminator_steps):
                     noise = torch.randn(self.batch_size, self.gen_input_dim)
                     fake_data = self.generator(noise).detach()
-                    disc_loss = self.train_discriminator(real_data, fake_data)
-
-                    self.lst_disc_loss.append(disc_loss.item())
-
-                # print("Discriminator loss: ", disc_loss)
+                    disc_loss += self.train_discriminator(real_data, fake_data).item() / self.discriminator_steps
                 gen_noise = torch.randn(self.batch_size, self.gen_input_dim)
-                gen_loss = self.train_generator(gen_noise)
-                # print("Generator loss: ", gen_loss)
+                gen_loss += self.train_generator(gen_noise).item()
+                gen_noise = torch.randn(self.batch_size, self.gen_input_dim)
+                gen_loss += self.train_generator(gen_noise).item()
 
-                self.lst_gen_loss.append(gen_loss.item())
-        
-        utils.plot_loss(self.lst_epochs, self.lst_disc_loss, self.lst_gen_loss, "loss")
+            # print("Discriminator loss: ", disc_loss)
+            # print("Generator loss: ", gen_loss)
+
+            # the three lines below are for plotting
+            self.lst_epochs.append(epoch)
+            self.lst_disc_loss.append(disc_loss)
+            self.lst_gen_loss.append(gen_loss / 2)
+
+        utils.plot_loss(self.lst_epochs, self.lst_disc_loss, self.lst_gen_loss, "Loss")
 
     def sampleImages(self, epoch):
         #generates and displays fake images using the current model
         synth_data = self.generator(self.constNoise)
-        utils.vector_to_img(synth_data, "./images/{}.jpg".format(iter))
+        utils.vector_to_img(synth_data, "./images/gan{}/epoch{}.jpg".format(self.id, epoch))
         

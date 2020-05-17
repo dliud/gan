@@ -6,6 +6,7 @@ import torch
 import random
 import torch.utils.data
 import train
+import utils
 
 train_images, train_labels = loadlocal_mnist(
         images_path='./mnist/train-images-idx3-ubyte', 
@@ -28,13 +29,14 @@ batch_size = 20
 dataLoaders = []
 for i in range(10):
     data = (torch.tensor(sortedImages[i][:train_size]) - 128.)/128
+    #utils.vector_to_img(data[:20], "./samples/{}.jpg".format(i))
     dataLoaders.append(torch.utils.data.DataLoader(data, batch_size=100, shuffle=True))
 
-gan_0 = train.GAN(discriminator_steps=1, disc_input_dim=784, 
-                gen_input_dim=100, batch_size=10, lr_disc=.0002, 
+gan_0 = train.GAN(2.1, discriminator_steps=1, disc_input_dim=784,
+                gen_input_dim=100, batch_size=10, lr_disc=.0002,
                 lr_gen=.0002)
 
-gan_0.train(dataLoaders[0], 20)
+gan_0.train(dataLoaders[2], 300)
 
 """
 disc = modules.Discriminator(imageDim)
