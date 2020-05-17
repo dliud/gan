@@ -1,13 +1,15 @@
 import torch
 import torch.nn as nn
+from numpy import savetxt
+
 import utils
 import modules
 
 
 class GAN:
-    def __init__(self, id, discriminator_steps=2, disc_input_dim=784, 
-                gen_input_dim=100, batch_size=10, lr_disc=.0002, 
-                lr_gen=.0002):
+    def __init__(self, id, discriminator_steps=2, disc_input_dim=784,
+                 gen_input_dim=100, batch_size=10, lr_disc=.0002,
+                 lr_gen=.0002):
         self.id = id
         self.discriminator_steps = discriminator_steps
         self.disc_input_dim = disc_input_dim
@@ -16,16 +18,15 @@ class GAN:
 
         self.discriminator = modules.Discriminator(disc_input_dim)
         self.generator = modules.Generator(gen_input_dim)
-        
+
         self.d_optimizer = torch.optim.Adam(self.discriminator.parameters(), lr=lr_disc)
         self.g_optimizer = torch.optim.Adam(self.generator.parameters(), lr=lr_gen)
         self.loss_function = nn.BCELoss()
-        self.constNoise = torch.randn(10, self.gen_input_dim)
+        self.constNoise = torch.randn(25, self.gen_input_dim)
 
         self.lst_epochs = []
         self.lst_disc_loss = []
-        self.lst_gen_loss = []  
-
+        self.lst_gen_loss = []
 
     def train_discriminator(self, real_data, fake_data):
         """
@@ -33,7 +34,7 @@ class GAN:
         :return:
         """
         self.d_optimizer.zero_grad()
-        
+
         prediction_r = self.discriminator(real_data)
         error_r = self.loss_function(prediction_r, torch.ones(real_data.size(0), 1))  # real
         error_r.backward()
@@ -43,11 +44,6 @@ class GAN:
         error_f.backward()
 
         self.d_optimizer.step()
-
-        """
-        # FOR PLOTTING
-        self.lst_disc_loss.append(error_r + error_f)
-        """
 
         return error_r + error_f
 
@@ -67,11 +63,6 @@ class GAN:
 
         self.g_optimizer.step()
 
-        """
-        # FOR PLOTTING
-        self.lst_gen_loss.append(error_f)
-        """
-
         return error_f
 
     def train(self, data_loader, num_epoch=100):
@@ -87,6 +78,7 @@ class GAN:
         """
         for epoch in range(num_epoch):
             if (epoch % 10) == 0:
+                print("Epoch: ", epoch)
                 self.sampleImages(epoch)
             disc_loss, gen_loss = 0, 0
             for n_batch, real_data in enumerate(data_loader):  # n_batch 0,1,2..., real_data (batch_size, 784)
@@ -110,7 +102,9 @@ class GAN:
         utils.plot_loss(self.lst_epochs, self.lst_disc_loss, self.lst_gen_loss, "Loss")
 
     def sampleImages(self, epoch):
-        #generates and displays fake images using the current model
+        # generates and displays fake images using the current model
         synth_data = self.generator(self.constNoise)
+        predictions = self.discriminator(synth_data)
+        predictions = predictions.detach().numpy()
+        savetxt('./predictions/gan{}/epoch{}'.format(self.id, epoch), predictions, delimiter=',')
         utils.vector_to_img(synth_data, "./images/gan{}/epoch{}.jpg".format(self.id, epoch))
-        
