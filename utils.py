@@ -14,12 +14,11 @@ def vector_to_img( vect, filename, display = False):
     img.save(filename)
 
 
-
 def plot_loss(lst_epochs, lst_disc_loss, lst_gen_loss, title):
     """
-    lst_epochs is just the epoch
-    lst_disc_loss should be List of discriminator losses
-    lst_gen_loss should be List of generator losses
+    lst_epochs: List of epoch numbers
+    lst_disc_loss:  List of discriminator losses
+    lst_gen_loss: List of generator losses
     precondition: len(lst_epochs) == len(lst_disc_loss) == len(lst_gen_loss)
     """
     plt.plot(lst_epochs, lst_disc_loss, '-b', label='discriminator loss')
@@ -31,3 +30,7 @@ def plot_loss(lst_epochs, lst_disc_loss, lst_gen_loss, title):
 
     plt.savefig(title + ".png")
     plt.show()
+
+def save_model(model, model_id, epoch):
+    path = './models/gan{}-epoch{}.pkl'.format(model_id, epoch)
+    torch.save(model.state_dict(), path)

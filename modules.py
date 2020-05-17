@@ -51,17 +51,17 @@ class Generator(torch.nn.Module):
         """
         super(Generator, self).__init__()
         self.hidden1 = nn.Sequential(
-            nn.Linear(input_dim, 32),
+            nn.Linear(input_dim, 196),
             nn.LeakyReLU(negative_slope=0.01),
             nn.Dropout(dropout_rate)
         )
         self.hidden2 = nn.Sequential(
-            nn.Linear(32, 128),
+            nn.Linear(128, 256),
             nn.LeakyReLU(negative_slope=0.01),
             nn.Dropout(dropout_rate)
         )
         self.hidden3 = nn.Sequential(
-            nn.Linear(128, 512),
+            nn.Linear(256, 512),
             nn.LeakyReLU(negative_slope=0.01),
             nn.Dropout(dropout_rate)
         )

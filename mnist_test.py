@@ -5,7 +5,7 @@ import modules
 import torch
 import random
 import torch.utils.data
-import train
+import gan
 import utils
 
 train_images, train_labels = loadlocal_mnist(
@@ -32,11 +32,11 @@ for i in range(10):
     #utils.vector_to_img(data[:20], "./samples/{}.jpg".format(i))
     dataLoaders.append(torch.utils.data.DataLoader(data, batch_size=100, shuffle=True))
 
-gan_0 = train.GAN(2.3, discriminator_steps=1, disc_input_dim=784,
+gan_0 = gan.GAN(2.3, discriminator_steps=1, disc_input_dim=784,
                 gen_input_dim=100, batch_size=10, lr_disc=.0002,
                 lr_gen=.0002)
 
-gan_0.train(dataLoaders[2], 900)
+gan_0.train(dataLoaders[2], 200)
 
 """
 disc = modules.Discriminator(imageDim)
