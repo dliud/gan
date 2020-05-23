@@ -7,43 +7,82 @@ import gan
 import utils
 
 
-# all tweaking should be done in main below
-def train_gans(lst_saved_models, dataloaders, num_gans=10, num_epochs=2000):
+def train_gans(lst_saved_models, dataloaders, num_gans=10, num_epochs=2000, trial=1,
+                printProgress=True, updateEvery=50):
     """
-    lst_saved_models: List of Tuples(model_id, epoch)
+    lst_saved_models: List of Tuples(ID, num_epoch)
+    where ID is {trial}.{numGAN} and num_epoch is the epoch of the model that you want to restore
+
+    NAMING CONVENTION: {trial}.{number that GAN is supposed to work on}
     """
     gans = []
     for i in range(num_gans):
-        gans.append(gan.GAN(2.2, discriminator_steps=1, generator_steps=2, disc_input_dim=784,
+        name = '{}.{}'.format(trial, i)
+        gans.append(gan.GAN(trial, name, discriminator_steps=1, generator_steps=2, disc_input_dim=784,
                             gen_input_dim=100, batch_size=10, lr_disc=.0001, lr_gen=.00015))
 
     for i in range(num_gans):
         epoch = 0
         if lst_saved_models[i] is not None:
-            print("Loading GAN ", i, " from a previously saved model...")
-            (model_id, epoch) = lst_saved_models[i]
-            gans[i] = utils.load_model(model_id, epoch)
+            print("--------Loading GAN", i, " from a previously saved model--------")
+            (ID, epoch) = lst_saved_models[i]
+            utils.load_model(gans[i], trial, ID, epoch)
             assert (gans[i] is not None), "Model didn't exist!"
 
         if epoch < num_epochs - 1:
-            print("--------Training GAN ", i, "--------")
-            gans[i].train(dataloaders[i], num_epochs, epoch)
+            print("--------Training GAN", i, "--------")
+            gans[i].train(dataloaders[i], num_epochs, start_epoch=epoch, 
+                            printProgress=printProgress, updateEvery=updateEvery)
         else:
-            print("GAN ", i, " was already fully trained to ", epoch, " epochs.")
+            print("GAN", i, " was already fully trained to ", epoch, " epochs.")
 
     return gans
 
 
+def repeatTrain(dataloaders, trial, epoch_len, end):
+    """
+    dataloaders: list of 10 dataloaders which have data
+    trial: trial number to save things
+    epoch_len: train each gan for epoch_len epochs before training the next can
+    """
+    lst_saved_models = [None for _ in range(10)]
+    
+    
+    prev_stop = 0
+    next_stop = epoch_len
+    
+    while prev_stop < end:
+        if prev_stop != 0:
+            for i in range(10):
+                ID = '{}.{}'.format(trial, i)
+                lst_saved_models[i] = (ID, prev_stop)
+        
+        train_gans(lst_saved_models, dataloaders, num_gans=10, num_epochs=next_stop, trial=trial, 
+                printProgress=True, updateEvery=50)
+        prev_stop = next_stop   
+        next_stop = prev_stop + epoch_len
+        print("Done with {} epochs".format(prev_stop))
+
+
 def main():
     num_gans = 10
-    dataloaders = utils.loadDataset(image_path='./mnist/train-images-idx3-ubyte',
-                                    label_path='./mnist/train-labels-idx1-ubyte')
+    dataloaders, labeledDataLoader = utils.loadDataset(train_size=1000, batch_size=100, 
+                                                        image_path='./mnist/train-images-idx3-ubyte',
+                                                        label_path='./mnist/train-labels-idx1-ubyte')
+    
+    repeatTrain(dataloaders, 1, 500, 20000)  # xd rawr
+    """
     lst_saved_models = [None for _ in range(num_gans)]
+    
+    trial = 1, saved_epoch = 30
+    for i in range(num_gans):
+        ID = '{}.{}'.format(trial, i)
+        lst_saved_models[i] = (ID, saved_epoch)
+    
+    train_gans(lst_saved_models, dataloaders, num_gans=num_gans, num_epochs=60, trial=1, 
+                printProgress=True, updateEvery=10)
+    
     """
-    can overwrite to a saved model in this space, e.g.
-    lst_saved_models[2] = (2, 1999)
-    """
-    train_gans(lst_saved_models, dataloaders, num_gans=num_gans, num_epochs=50)
 
 
 if __name__ == "__main__":

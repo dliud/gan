@@ -7,10 +7,11 @@ import modules
 
 
 class GAN(torch.nn.Module):
-    def __init__(self, id, discriminator_steps=1, generator_steps=2, 
+    def __init__(self, trial, id, discriminator_steps=1, generator_steps=2, 
                  disc_input_dim=784, gen_input_dim=100, batch_size=10, 
                  lr_disc=.0002, lr_gen=.0002):
         super(GAN, self).__init__()
+        self.trial = trial
         self.id = id
         self.discriminator_steps = discriminator_steps
         self.generator_steps = generator_steps
@@ -67,7 +68,7 @@ class GAN(torch.nn.Module):
 
         return error_f
 
-    def train(self, data_loader, num_epoch, start_epoch=0):
+    def train(self, data_loader, num_epoch, start_epoch=0, printProgress=False, updateEvery=50):
         """
         For each epoch in num_epochs:
             Train discriminator for discriminator_step iterations.
@@ -78,15 +79,16 @@ class GAN(torch.nn.Module):
                 1. sample minibatch from noise prior - p_g
                 2. update generator via SGA
         """
-        for epoch in range(num_epoch):
-            if (epoch % 50) == 0:
-                print("Epoch: ", epoch)
-                self.sample_images(epoch)
+        for epoch in range(start_epoch, num_epoch):
+            if ((epoch + 1) % updateEvery) == 0:
+                print("Epoch: {}".format(epoch + 1))
+                if printProgress: self.sample_images(epoch + 1)
             disc_loss, gen_loss = 0, 0
             for n_batch, real_data in enumerate(data_loader):  # n_batch 0,1,# 2..., real_data (batch_size, 784)
                 for _ in range(self.discriminator_steps):
                     noise = torch.randn(self.batch_size, self.gen_input_dim)
                     fake_data = self.generator(noise).detach()
+                    
                     disc_loss += self.train_discriminator(real_data, fake_data).item() / self.discriminator_steps
                 for _ in range(self.generator_steps):
                     gen_noise = torch.randn(self.batch_size, self.gen_input_dim)
@@ -100,13 +102,16 @@ class GAN(torch.nn.Module):
             self.lst_disc_loss.append(disc_loss)
             self.lst_gen_loss.append(gen_loss)
         
-        utils.save_model(self, self.id, epoch)
-        utils.plot_loss(self.lst_epochs, self.lst_disc_loss, self.lst_gen_loss, "Loss{}".format(self.id))
+        print("Saving model with ID", self.id, "at epoch", num_epoch)
+        utils.save_model(self, self.trial, self.id, num_epoch)
+        utils.plot_loss(self.lst_epochs, self.lst_disc_loss, self.lst_gen_loss, "./outputs/trial{}/gan{}/loss{}-{}".format(self.trial, self.id, start_epoch, num_epoch))
 
     def sample_images(self, epoch):
-        # generates and displays fake images using the current model
+        """
+        Generates and displays fake images using the current model.
+        """
         synth_data = self.generator(self.constNoise)
-        predictions = self.discriminator(synth_data)
-        predictions = predictions.detach().numpy()
-        savetxt('./predictions/gan{}/epoch{}'.format(self.id, epoch), predictions, delimiter=',')
-        utils.vector_to_img(synth_data, "./images/gan{}/epoch{}.jpg".format(self.id, epoch))
+        #predictions = self.discriminator(synth_data)
+        #predictions = predictions.detach().numpy()
+        #savetxt('./predictions/gan{}/epoch{}'.format(self.id, epoch), predictions, delimiter=',')
+        utils.vector_to_img(synth_data, "./outputs/trial{}/gan{}/epoch{}.jpg".format(self.trial, self.id, epoch))
