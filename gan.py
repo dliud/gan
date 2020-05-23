@@ -8,9 +8,8 @@ import modules
 
 class GAN(torch.nn.Module):
     def __init__(self, id, discriminator_steps=1, generator_steps=2, 
-                 disc_input_dim=784,
-                 gen_input_dim=100, batch_size=10, lr_disc=.0002,
-                 lr_gen=.0002):
+                 disc_input_dim=784, gen_input_dim=100, batch_size=10, 
+                 lr_disc=.0002, lr_gen=.0002):
         super(GAN, self).__init__()
         self.id = id
         self.discriminator_steps = discriminator_steps
@@ -68,7 +67,7 @@ class GAN(torch.nn.Module):
 
         return error_f
 
-    def train(self, data_loader, num_epoch):
+    def train(self, data_loader, num_epoch, start_epoch=0):
         """
         For each epoch in num_epochs:
             Train discriminator for discriminator_step iterations.
@@ -80,9 +79,9 @@ class GAN(torch.nn.Module):
                 2. update generator via SGA
         """
         for epoch in range(num_epoch):
-            if (epoch % 10) == 0:
+            if (epoch % 50) == 0:
                 print("Epoch: ", epoch)
-                # self.sample_images(epoch)
+                self.sample_images(epoch)
             disc_loss, gen_loss = 0, 0
             for n_batch, real_data in enumerate(data_loader):  # n_batch 0,1,# 2..., real_data (batch_size, 784)
                 for _ in range(self.discriminator_steps):
@@ -102,7 +101,7 @@ class GAN(torch.nn.Module):
             self.lst_gen_loss.append(gen_loss)
         
         utils.save_model(self, self.id, epoch)
-        utils.plot_loss(self.lst_epochs, self.lst_disc_loss, self.lst_gen_loss, "Loss")
+        utils.plot_loss(self.lst_epochs, self.lst_disc_loss, self.lst_gen_loss, "Loss{}".format(self.id))
 
     def sample_images(self, epoch):
         # generates and displays fake images using the current model
