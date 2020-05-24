@@ -1,12 +1,15 @@
 import torch
 import torch.nn as nn
 
+import utils
+
 
 class Classifier(torch.nn.Module):
-    def __init__(self, lr=.0002, input_dim=784, output_dim=10, 
-                nClasses=10, dropout_rate=.1):
+    def __init__(self, lr=.0002, input_dim=784, output_dim=10,
+                 dropout_rate=.1):
         """
         3 hidden layers
+        output_dim = number of classes
         """
         super(Classifier, self).__init__()
 
@@ -46,23 +49,18 @@ class Classifier(torch.nn.Module):
         for epoch in range(num_epoch):
             if (epoch % 10 == 0):
                 print(epoch)
-            for n_batch, data in enumerate(data_loader): 
+            for n_batch, data in enumerate(data_loader):
                 pred = self.forward(data[:, :-1])
                 target = data[:, -1].long()
                 loss = lossfn(pred, target)
                 loss.backward()
                 self.optimizer.step()
-            
+
             self.lst_epochs.append(epoch)
             self.lst_loss.append(loss)
         utils.plot_loss_2(self.lst_epochs, self.lst_loss, "classifier_loss_synth" if synth else "classifier_loss_orig")
 
-
     def predict(self, data):
-        #data = (m, input_size)
-        #returns array of input size of labels 0-9
         weights = self.forward(data)
         _, pred = weights.max(1)
         return pred
-
-

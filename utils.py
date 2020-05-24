@@ -23,12 +23,12 @@ def gen_synth_data(gans, n_entries=20, batch_size=100):
     all_data = torch.zeros((0, 785))
     for i in range(len(gans)):
         noise = torch.randn(n_entries, gans[i].gen_input_dim)
-        data = gans[i].generator(noise)
+        data = gans[i].generator(noise).detach()
         labeled = torch.cat((data, i * torch.ones((data.shape[0], 1))), 1)
         all_data = torch.cat((all_data, labeled), 0)
-    return torch.utils.data.DataLoader(allData, batch_size=batch_size, shuffle=True)
+    return torch.utils.data.DataLoader(all_data, batch_size=batch_size, shuffle=True)
 
-def vector_to_img( vect, filename, display = False):
+def vector_to_img(vect, filename, display = False):
     """
     Converts, displays, and saves images
     Input: tensor of len 784 of floats from -1.0 to 1.0
@@ -83,7 +83,7 @@ def plot_loss_2(lst_epochs, lst_loss, title):
     plt.title(title)
 
     plt.savefig(title + ".png")
-    plt.show()
+    #plt.show()
     
     plt.clf()
     plt.cla()
