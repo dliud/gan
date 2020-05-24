@@ -1,7 +1,4 @@
 from matplotlib import pyplot as plt
-import torch
-import numpy as np
-from PIL import Image
 from mlxtend.data import loadlocal_mnist
 from PIL import Image
 import numpy as np
@@ -10,11 +7,18 @@ import torch
 import random
 import torch.utils.data
 import gan
-import utils
+import os
+import errno
 
 #converts, displays, and saves images
 def vector_to_img( vect, filename, display = False):
     #input: tensor of len 784 of floats form -1.0 to 1.0
+    if not os.path.exists(os.path.dirname(filename)):
+        try:
+            os.makedirs(os.path.dirname(filename))
+        except OSError as exc: # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
     vect = vect.detach().numpy()
     vect = vect.reshape(-1, 28)
     img = Image.fromarray((vect+1)*128)
@@ -41,23 +45,29 @@ def plot_loss(lst_epochs, lst_disc_loss, lst_gen_loss, title):
     plt.show()
 
 
-def save_model(model, model_id, epoch):
-    path = './models/gan{}-epoch{}.pkl'.format(model_id, epoch)
-    torch.save(model.state_dict(), path)
+def save_model(gan, trial, ID, num_epoch):
+    path = './models/trial{}/gan{}-epoch{}.pkl'.format(trial, ID,  num_epoch)
+    if not os.path.exists(os.path.dirname(path)):
+        try:
+            os.makedirs(os.path.dirname(path))
+        except OSError as exc: # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
+    torch.save(gan.state_dict(), path)
 
 
-def load_model(model_id, epoch):
-    path = './models/gan{}-epoch{}.pkl'.format(model_id, epoch)
-    return torch.load(path)
+def load_model(gan, trial, ID, num_epoch):
+    path = './models/trial{}/gan{}-epoch{}.pkl'.format(trial, ID, num_epoch)
+    gan.load_state_dict(torch.load(path))
 
 
-def loadDataset(train_size=1000, batch_size=100, 
+def loadDataset(train_size=1000, batch_size=100, randSeed = 17,
                 image_path='./mnist/train-images-idx3-ubyte', 
                 label_path='./mnist/train-labels-idx1-ubyte'):
     """
     return: list of dataloaders, each containing train-size images of each number with batch size 
     """
-
+    random.seed(randSeed)
     train_images, train_labels = loadlocal_mnist(
                                 images_path=image_path, 
                                 labels_path=label_path)
@@ -69,7 +79,7 @@ def loadDataset(train_size=1000, batch_size=100,
     for i in range(len(train_labels)):
         sortedImages[train_labels[i]].append(train_images[i])
 
-    random.seed(17)
+    
 
     for images in sortedImages: 
         random.shuffle(images)
