@@ -8,11 +8,31 @@ import random
 import torch.utils.data
 import gan
 import os
+import classifier
 import errno
 
-#converts, displays, and saves images
+
+def gen_synth_data(gans, n_entries=20, batch_size=100):
+    """
+    params: gans: list of gans
+        n_entries: number of fake images of each number to generate
+        batch_size: batch size of the returned dataloader
+    Returns a dataloader with each element being a synthetic image + label in the format (785,) tensor
+    n_entries images of each number are generated, so n_entries * len(gans) total images
+    """
+    all_data = torch.zeros((0, 785))
+    for i in range(len(gans)):
+        noise = torch.randn(n_entries, gans[i].gen_input_dim)
+        data = gans[i].generator(noise)
+        labeled = torch.cat((data, i * torch.ones((data.shape[0], 1))), 1)
+        all_data = torch.cat((all_data, labeled), 0)
+    return torch.utils.data.DataLoader(allData, batch_size=batch_size, shuffle=True)
+
 def vector_to_img( vect, filename, display = False):
-    #input: tensor of len 784 of floats form -1.0 to 1.0
+    """
+    Converts, displays, and saves images
+    Input: tensor of len 784 of floats from -1.0 to 1.0
+    """
     if not os.path.exists(os.path.dirname(filename)):
         try:
             os.makedirs(os.path.dirname(filename))
@@ -29,6 +49,7 @@ def vector_to_img( vect, filename, display = False):
 
 def plot_loss(lst_epochs, lst_disc_loss, lst_gen_loss, title):
     """
+    ~~~~~~~~for the GAN~~~~~~~~
     lst_epochs: List of epoch numbers
     lst_disc_loss:  List of discriminator losses
     lst_gen_loss: List of generator losses
@@ -43,6 +64,30 @@ def plot_loss(lst_epochs, lst_disc_loss, lst_gen_loss, title):
 
     plt.savefig(title + ".png")
     # plt.show()
+
+    plt.clf()
+    plt.cla()
+    plt.close()
+
+def plot_loss_2(lst_epochs, lst_loss, title):
+    """
+    ~~~~~~~~for the classifier~~~~~~~~
+    lst_epochs: List of epoch numbers
+    lst_loss: List of classifier losses
+    precondition: len(lst_epochs) == len(lst_loss)
+    """
+    plt.plot(lst_epochs, lst_loss, '-g', label='classifier loss')
+
+    plt.xlabel('epoch')
+    plt.legend(loc = 'upper right')
+    plt.title(title)
+
+    plt.savefig(title + ".png")
+    plt.show()
+    
+    plt.clf()
+    plt.cla()
+    plt.close()
 
 
 def save_model(gan, trial, ID, num_epoch):
@@ -79,8 +124,6 @@ def loadDataset(train_size=1000, batch_size=100, randSeed = 17,
     for i in range(len(train_labels)):
         sortedImages[train_labels[i]].append(train_images[i])
 
-    
-
     for images in sortedImages: 
         random.shuffle(images)
  
@@ -95,4 +138,11 @@ def loadDataset(train_size=1000, batch_size=100, randSeed = 17,
     labeledDataLoader = torch.utils.data.DataLoader(allData, batch_size=batch_size, shuffle=True)
     return dataLoaders, labeledDataLoader
 
-
+def get_accuracy(classifier, image_path='./mnist/t10k-images-idx3-ubyte', 
+                label_path='./mnist/t10k-labels-idx1-ubyte'):
+    test_images, test_labels = loadlocal_mnist(images_path=image_path, labels_path=label_path)
+    test = (torch.tensor(test_images)-128.)/128
+    test_labels = torch.tensor(test_labels) 
+    predictions = classifier.predict(test)
+    predictions = predictions.type(torch.uint8)
+    return torch.mean(torch.eq(predictions, test_labels).float()).item()

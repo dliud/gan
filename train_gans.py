@@ -70,7 +70,7 @@ def main():
                                                         image_path='./mnist/train-images-idx3-ubyte',
                                                         label_path='./mnist/train-labels-idx1-ubyte')
     
-    repeatTrain(dataloaders, 1, 500, 20000)  # xd rawr
+    repeatTrain(dataloaders, 1, 500, 20000)
     """
     lst_saved_models = [None for _ in range(num_gans)]
     

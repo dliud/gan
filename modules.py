@@ -29,7 +29,6 @@ class Discriminator(torch.nn.Module):
             nn.Linear(32, output_dim),
             nn.Sigmoid()
         )
-        # could be 10 depending on task
         # self.softmax = nn.Softmax()
 
     def forward(self, input):
