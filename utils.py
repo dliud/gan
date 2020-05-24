@@ -42,7 +42,7 @@ def plot_loss(lst_epochs, lst_disc_loss, lst_gen_loss, title):
     plt.title(title)
 
     plt.savefig(title + ".png")
-    plt.show()
+    # plt.show()
 
 
 def save_model(gan, trial, ID, num_epoch):
