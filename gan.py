@@ -113,7 +113,4 @@ class GAN(torch.nn.Module):
         Generates and displays fake images using the current model.
         """
         synth_data = self.generator(self.constNoise)
-        #predictions = self.discriminator(synth_data)
-        #predictions = predictions.detach().numpy()
-        #savetxt('./predictions/gan{}/epoch{}'.format(self.id, epoch), predictions, delimiter=',')
         utils.vector_to_img(synth_data, "./outputs/trial{}/gan{}/epoch{}.jpg".format(self.trial, self.id, epoch))
