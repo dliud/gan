@@ -3,33 +3,33 @@ import torch.nn as nn
 
 
 class Discriminator(torch.nn.Module):
-    def __init__(self, input_dim, output_dim=1, dropout_rate=.1):
+    def __init__(self, input_dim, output_dim=1, dropout_rate=.1, alpha=4):
         """
         right now only doing binary classification, so output_dim = 1
         3 hidden layers
+        alpha = model is proportional to (1+alpha)
         """
         super(Discriminator, self).__init__()
 
         self.hidden1 = nn.Sequential(
-            nn.Linear(input_dim, 512),
+            nn.Linear(input_dim, int(128 * alpha)),
             nn.LeakyReLU(0.01),
             nn.Dropout(dropout_rate)
         )
         self.hidden2 = nn.Sequential(
-            nn.Linear(512, 128),
+            nn.Linear(int(128 * alpha), int(32 * alpha)),
             nn.LeakyReLU(negative_slope=0.01),
             nn.Dropout(dropout_rate)
         )
         self.hidden3 = nn.Sequential(
-            nn.Linear(128, 32),
+            nn.Linear(int(32 * alpha), int(8 *alpha)),
             nn.LeakyReLU(negative_slope=0.01),
             nn.Dropout(dropout_rate)
         )
         self.output = nn.Sequential(
-            nn.Linear(32, output_dim),
+            nn.Linear(int(8 * alpha), output_dim),
             nn.Sigmoid()
         )
-        # self.softmax = nn.Softmax()
 
     def forward(self, input):
         """
@@ -43,29 +43,29 @@ class Discriminator(torch.nn.Module):
 
 
 class Generator(torch.nn.Module):
-    def __init__(self, input_dim, output_dim=784, dropout_rate=.1):
+    def __init__(self, input_dim, output_dim=784, dropout_rate=.1, alpha=4):
         """
         no dropout
         3 hidden layers
         """
         super(Generator, self).__init__()
         self.hidden1 = nn.Sequential(
-            nn.Linear(input_dim, 128),
+            nn.Linear(input_dim, int(32*alpha)),
             nn.LeakyReLU(negative_slope=0.01),
             nn.Dropout(dropout_rate)
         )
         self.hidden2 = nn.Sequential(
-            nn.Linear(128, 256),
+            nn.Linear(int(32*alpha), int(64*alpha)),
             nn.LeakyReLU(negative_slope=0.01),
             nn.Dropout(dropout_rate)
         )
         self.hidden3 = nn.Sequential(
-            nn.Linear(256, 512),
+            nn.Linear(int(64*alpha), int(128*alpha)),
             nn.LeakyReLU(negative_slope=0.01),
             nn.Dropout(dropout_rate)
         )
         self.output = nn.Sequential(
-            nn.Linear(512, output_dim),
+            nn.Linear(int(128*alpha), output_dim),
             nn.Tanh()
         )
 

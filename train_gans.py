@@ -8,7 +8,7 @@ import utils
 
 
 def train_gans(lst_saved_models, dataloaders, num_gans=10, num_epochs=2000, trial=1,
-                printProgress=True, updateEvery=50):
+                printProgress=True, updateEvery=50, alpha = 4):
     """
     lst_saved_models: List of Tuples(ID, num_epoch)
     where ID is {trial}.{numGAN} and num_epoch is the epoch of the model that you want to restore
@@ -19,7 +19,7 @@ def train_gans(lst_saved_models, dataloaders, num_gans=10, num_epochs=2000, tria
     for i in range(num_gans):
         name = '{}.{}'.format(trial, i)
         gans.append(gan.GAN(trial, name, discriminator_steps=1, generator_steps=2, disc_input_dim=784,
-                            gen_input_dim=100, batch_size=10, lr_disc=.0001, lr_gen=.00015))
+                            gen_input_dim=100, lr_disc=.00075, lr_gen=.00015, label_smooth=True, alpha = 4))
 
     for i in range(num_gans):
         epoch = 0
@@ -39,7 +39,7 @@ def train_gans(lst_saved_models, dataloaders, num_gans=10, num_epochs=2000, tria
     return gans
 
 
-def repeatTrain(dataloaders, trial, epoch_len, end):
+def repeatTrain(dataloaders, trial, epoch_len, end, start = 0):
     """
     dataloaders: list of 10 dataloaders which have data
     trial: trial number to save things
@@ -48,8 +48,8 @@ def repeatTrain(dataloaders, trial, epoch_len, end):
     lst_saved_models = [None for _ in range(10)]
     
     
-    prev_stop = 0
-    next_stop = epoch_len
+    prev_stop = start
+    next_stop = prev_stop + epoch_len
     
     while prev_stop < end:
         if prev_stop != 0:
@@ -66,11 +66,11 @@ def repeatTrain(dataloaders, trial, epoch_len, end):
 
 def main():
     num_gans = 10
-    dataloaders, labeledDataLoader = utils.loadDataset(train_size=1000, batch_size=100, 
+    dataloaders, labeledDataLoader = utils.loadDataset(train_size=500, batch_size=25,
                                                         image_path='./mnist/train-images-idx3-ubyte',
                                                         label_path='./mnist/train-labels-idx1-ubyte')
     
-    repeatTrain(dataloaders, 1, 500, 20000)
+    repeatTrain(dataloaders, 5, 500, 2000)
     """
     lst_saved_models = [None for _ in range(num_gans)]
     

@@ -28,7 +28,7 @@ def gen_synth_data(gans, n_entries=20, batch_size=100):
         all_data = torch.cat((all_data, labeled), 0)
     return torch.utils.data.DataLoader(all_data, batch_size=batch_size, shuffle=True)
 
-def vector_to_img(vect, filename, display = False):
+def vector_to_img( vect, filename, display = False):
     """
     Converts, displays, and saves images
     Input: tensor of len 784 of floats from -1.0 to 1.0
@@ -57,12 +57,18 @@ def plot_loss(lst_epochs, lst_disc_loss, lst_gen_loss, title):
     """
     plt.plot(lst_epochs, lst_disc_loss, '-b', label='discriminator loss')
     plt.plot(lst_epochs, lst_gen_loss, '-r', label='generator loss')
-
+    
     plt.xlabel('epoch')
     plt.legend(loc = 'upper right')
     plt.title(title)
-
-    plt.savefig(title + ".png")
+    filename = title + ".png"
+    if not os.path.exists(os.path.dirname(filename)):
+        try:
+            os.makedirs(os.path.dirname(filename))
+        except OSError as exc: # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
+    plt.savefig(filename)
     # plt.show()
 
     plt.clf()
@@ -82,9 +88,16 @@ def plot_loss_2(lst_epochs, lst_loss, title):
     plt.legend(loc = 'upper right')
     plt.title(title)
 
-    plt.savefig(title + ".png")
-    #plt.show()
-    
+    filename = title + ".png"
+    if not os.path.exists(os.path.dirname(filename)):
+        try:
+            os.makedirs(os.path.dirname(filename))
+        except OSError as exc: # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
+    plt.savefig(filename)
+    plt.show()
+
     plt.clf()
     plt.cla()
     plt.close()

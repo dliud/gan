@@ -7,19 +7,20 @@ import modules
 
 class GAN(torch.nn.Module):
     def __init__(self, trial, id, discriminator_steps=1, generator_steps=2, 
-                 disc_input_dim=784, gen_input_dim=100, batch_size=10, 
-                 lr_disc=.0002, lr_gen=.0002):
+                 disc_input_dim=784, gen_input_dim=100,
+                 lr_disc=.0002, lr_gen=.0002, label_smooth=False, alpha=4):
         super(GAN, self).__init__()
+       
         self.trial = trial
         self.id = id
         self.discriminator_steps = discriminator_steps
         self.generator_steps = generator_steps
         self.disc_input_dim = disc_input_dim
         self.gen_input_dim = gen_input_dim
-        self.batch_size = batch_size
+        self.label_smooth = label_smooth
 
-        self.discriminator = modules.Discriminator(disc_input_dim)
-        self.generator = modules.Generator(gen_input_dim)
+        self.discriminator = modules.Discriminator(disc_input_dim, alpha = alpha)
+        self.generator = modules.Generator(gen_input_dim, alpha = alpha)
 
         self.d_optimizer = torch.optim.Adam(self.discriminator.parameters(), lr=lr_disc)
         self.g_optimizer = torch.optim.Adam(self.generator.parameters(), lr=lr_gen)
@@ -38,7 +39,9 @@ class GAN(torch.nn.Module):
         self.d_optimizer.zero_grad()
 
         prediction_r = self.discriminator(real_data)
-        error_r = self.loss_function(prediction_r, torch.ones(real_data.size(0), 1))  # real
+        target = torch.ones(real_data.size(0), 1)
+        if self.label_smooth: target = .9 * target
+        error_r = self.loss_function(prediction_r, target)  # real
         error_r.backward()
 
         prediction_f = self.discriminator(fake_data)
@@ -83,14 +86,14 @@ class GAN(torch.nn.Module):
                 print("Epoch: {}".format(epoch + 1))
                 if printProgress: self.sample_images(epoch + 1)
             disc_loss, gen_loss = 0, 0
-            for n_batch, real_data in enumerate(data_loader):  # n_batch 0,1,# 2..., real_data (batch_size, 784)
+            for n_batch, real_data in enumerate(data_loader):  #real_data is of shape (batch_size, 784)
                 for _ in range(self.discriminator_steps):
-                    noise = torch.randn(self.batch_size, self.gen_input_dim)
+                    noise = torch.randn(real_data.shape[0], self.gen_input_dim)
                     fake_data = self.generator(noise).detach()
                     
                     disc_loss += self.train_discriminator(real_data, fake_data).item() / self.discriminator_steps
                 for _ in range(self.generator_steps):
-                    gen_noise = torch.randn(self.batch_size, self.gen_input_dim)
+                    gen_noise = torch.randn(real_data.shape[0], self.gen_input_dim)
                     gen_loss += self.train_generator(gen_noise).item() / self.generator_steps
 
             # print("Discriminator loss: ", disc_loss)

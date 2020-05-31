@@ -4,14 +4,14 @@ import torch.nn as nn
 import utils
 
 
-class Classifier(torch.nn.Module):
+class DeepClassifier(torch.nn.Module):
     def __init__(self, lr=.0002, input_dim=784, output_dim=10,
                  dropout_rate=.1):
         """
         3 hidden layers
         output_dim = number of classes
         """
-        super(Classifier, self).__init__()
+        super(DeepClassifier, self).__init__()
 
         self.hidden1 = nn.Sequential(
             nn.Linear(input_dim, 512),
@@ -47,8 +47,8 @@ class Classifier(torch.nn.Module):
     def train(self, data_loader, num_epoch=100, synth=False):
         lossfn = torch.nn.CrossEntropyLoss()
         for epoch in range(num_epoch):
-            if (epoch % 10 == 0):
-                print(epoch)
+            total_loss = 0
+           
             for n_batch, data in enumerate(data_loader):
                 pred = self.forward(data[:, :-1])
                 target = data[:, -1].long()
@@ -57,8 +57,65 @@ class Classifier(torch.nn.Module):
                 self.optimizer.step()
 
             self.lst_epochs.append(epoch)
-            self.lst_loss.append(loss)
+            self.lst_loss.append(total_loss)
+            if (epoch % 10 == 0):
+                print(epoch, total_loss)
         utils.plot_loss_2(self.lst_epochs, self.lst_loss, "classifier_loss_synth" if synth else "classifier_loss_orig")
+
+    def predict(self, data):
+        weights = self.forward(data)
+        _, pred = weights.max(1)
+        return pred
+
+
+class SimpleClassifier(torch.nn.Module):
+    def __init__(self, lr=.0002, input_dim=784, output_dim=10, hidden_dim = 300, reg = .0001,
+                 dropout_rate=.1):
+        """
+        3 hidden layers
+        output_dim = number of classes
+        """
+        super(SimpleClassifier, self).__init__()
+
+        self.hidden = nn.Sequential(
+            nn.Linear(input_dim, hidden_dim),
+            nn.Sigmoid(),
+            nn.Dropout(dropout_rate)
+        )
+        
+        self.output = nn.Linear(hidden_dim, output_dim)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=lr, weight_decay = reg)
+
+        self.lst_epochs = []
+        self.lst_loss = []
+
+    def forward(self, input):
+        """
+        input has dimension (input_dim)
+        """
+        input = self.hidden(input)
+        input = self.output(input)
+        return input
+
+    def train(self, data_loader, name, num_epoch=100,):
+        lossfn = torch.nn.CrossEntropyLoss()
+        for epoch in range(num_epoch):
+            total_loss = 0
+            count = 0
+            for n_batch, data in enumerate(data_loader):
+                count+= 1
+                pred = self.forward(data[:, :-1])
+                target = data[:, -1].long()
+                loss = lossfn(pred, target)
+                total_loss+= loss.item()
+                loss.backward()
+                self.optimizer.step()
+            total_loss = total_loss/len(data_loader.dataset)
+            self.lst_epochs.append(epoch)
+            self.lst_loss.append(total_loss)
+            if (epoch % 10 == 0):
+                print(epoch, total_loss)
+        utils.plot_loss_2(self.lst_epochs, self.lst_loss, name)
 
     def predict(self, data):
         weights = self.forward(data)
