@@ -6,7 +6,6 @@ import modules
 import torch
 import random
 import torch.utils.data
-import gan
 import os
 import classifier
 import errno
@@ -96,7 +95,28 @@ def plot_loss_2(lst_epochs, lst_loss, title):
             if exc.errno != errno.EEXIST:
                 raise
     plt.savefig(filename)
-    plt.show()
+    #plt.show()
+
+    plt.clf()
+    plt.cla()
+    plt.close()
+
+def plot_devset_accuracy(lst_epochs, lst_accuracies, title):
+    plt.plot(lst_epochs, lst_accuracies, '-g', label='accuracy (dev set)')
+
+    plt.xlabel('epoch')
+    plt.legend(loc = 'upper right')
+    plt.title(title)
+
+    filename = title + ".png"
+    if not os.path.exists(os.path.dirname(filename)):
+        try:
+            os.makedirs(os.path.dirname(filename))
+        except OSError as exc: # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
+    plt.savefig(filename)
+    #plt.show()
 
     plt.clf()
     plt.cla()
@@ -130,9 +150,6 @@ def loadDataset(train_size=1000, batch_size=100, randSeed = 17,
                                 images_path=image_path, 
                                 labels_path=label_path)
 
-    # for i range(len(train_images)):
-    #     train_images[i] = torch.tensor((train_images[i] - 128.)/128)
-
     sortedImages = [[] for _ in range(10)]
     for i in range(len(train_labels)):
         sortedImages[train_labels[i]].append(train_images[i])
@@ -151,7 +168,34 @@ def loadDataset(train_size=1000, batch_size=100, randSeed = 17,
     labeledDataLoader = torch.utils.data.DataLoader(allData, batch_size=batch_size, shuffle=True)
     return dataLoaders, labeledDataLoader
 
-def get_accuracy(classifier, image_path='./mnist/t10k-images-idx3-ubyte', 
+
+def get_dev_accuracy(classifier, dev_size=1000, randSeed = 17,
+                image_path='./mnist/train-images-idx3-ubyte', 
+                label_path='./mnist/train-labels-idx1-ubyte'):
+    
+    random.seed(randSeed)
+    train_images, train_labels = loadlocal_mnist(images_path=image_path, labels_path=label_path)
+
+    sortedImages = [[] for _ in range(10)]
+    for i in range(len(train_labels)):
+        sortedImages[train_labels[i]].append(train_images[i])
+
+    for images in sortedImages: 
+        random.shuffle(images)
+ 
+    test_images = []
+    test_labels = []
+    for i in range(10):
+        test_images+=sortedImages[i][-dev_size:]
+        test_labels+=[i for j in range(dev_size)]
+    
+    test = (torch.tensor(test_images)-128.)/128
+    test_labels = torch.tensor(test_labels) 
+    predictions = classifier.predict(test)
+    predictions = predictions.type(torch.uint8)
+    return torch.mean(torch.eq(predictions, test_labels).float()).item()
+
+def get_test_accuracy(classifier, image_path='./mnist/t10k-images-idx3-ubyte', 
                 label_path='./mnist/t10k-labels-idx1-ubyte'):
     test_images, test_labels = loadlocal_mnist(images_path=image_path, labels_path=label_path)
     test = (torch.tensor(test_images)-128.)/128
@@ -159,3 +203,14 @@ def get_accuracy(classifier, image_path='./mnist/t10k-images-idx3-ubyte',
     predictions = classifier.predict(test)
     predictions = predictions.type(torch.uint8)
     return torch.mean(torch.eq(predictions, test_labels).float()).item()
+
+#def test_discriminators(classifier, image_path='./mnist/t10k-images-idx3-ubyte', 
+               # label_path='./mnist/t10k-labels-idx1-ubyte'):
+
+def make_folder(path):
+    if not os.path.exists(os.path.dirname(path)):
+        try:
+            os.makedirs(os.path.dirname(path))
+        except OSError as exc: # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise

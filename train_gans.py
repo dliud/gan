@@ -7,8 +7,8 @@ import gan
 import utils
 
 
-def train_gans(lst_saved_models, dataloaders, num_gans=10, num_epochs=2000, trial=1,
-                printProgress=True, updateEvery=50, alpha = 4):
+def train_gans(lst_saved_models, dataloaders, trial, alpha, num_gans=10, num_epochs=2000, 
+                printProgress=True, updateEvery=50):
     """
     lst_saved_models: List of Tuples(ID, num_epoch)
     where ID is {trial}.{numGAN} and num_epoch is the epoch of the model that you want to restore
@@ -19,7 +19,7 @@ def train_gans(lst_saved_models, dataloaders, num_gans=10, num_epochs=2000, tria
     for i in range(num_gans):
         name = '{}.{}'.format(trial, i)
         gans.append(gan.GAN(trial, name, discriminator_steps=1, generator_steps=2, disc_input_dim=784,
-                            gen_input_dim=100, lr_disc=.00075, lr_gen=.00015, label_smooth=True, alpha = 4))
+                            gen_input_dim=100, lr_disc=.00075, lr_gen=.00015, label_smooth=True, alpha = alpha))
 
     for i in range(num_gans):
         epoch = 0
@@ -39,7 +39,7 @@ def train_gans(lst_saved_models, dataloaders, num_gans=10, num_epochs=2000, tria
     return gans
 
 
-def repeatTrain(dataloaders, trial, epoch_len, end, start = 0):
+def repeatTrain(dataloaders, trial, epoch_len, alpha,  end, start=0):
     """
     dataloaders: list of 10 dataloaders which have data
     trial: trial number to save things
@@ -58,7 +58,7 @@ def repeatTrain(dataloaders, trial, epoch_len, end, start = 0):
                 lst_saved_models[i] = (ID, prev_stop)
         
         train_gans(lst_saved_models, dataloaders, num_gans=10, num_epochs=next_stop, trial=trial, 
-                printProgress=True, updateEvery=50)
+                printProgress=True, updateEvery=50, alpha = alpha)
         prev_stop = next_stop   
         next_stop = prev_stop + epoch_len
         print("Done with {} epochs".format(prev_stop))
@@ -66,11 +66,11 @@ def repeatTrain(dataloaders, trial, epoch_len, end, start = 0):
 
 def main():
     num_gans = 10
-    dataloaders, labeledDataLoader = utils.loadDataset(train_size=500, batch_size=25,
+    dataloaders, labeledDataLoader = utils.loadDataset(train_size=1000, batch_size=25,
                                                         image_path='./mnist/train-images-idx3-ubyte',
                                                         label_path='./mnist/train-labels-idx1-ubyte')
     
-    repeatTrain(dataloaders, 5, 500, 2000)
+    repeatTrain(dataloaders, trial = 7, epoch_len = 500, end = 2000, alpha = 4)
     """
     lst_saved_models = [None for _ in range(num_gans)]
     

@@ -33,6 +33,7 @@ class DeepClassifier(torch.nn.Module):
 
         self.lst_epochs = []
         self.lst_loss = []
+        self.lst_dev_accuracy = []
 
     def forward(self, input):
         """
@@ -49,7 +50,7 @@ class DeepClassifier(torch.nn.Module):
         for epoch in range(num_epoch):
             total_loss = 0
            
-            for n_batch, data in enumerate(data_loader):
+            for _, data in enumerate(data_loader):
                 pred = self.forward(data[:, :-1])
                 target = data[:, -1].long()
                 loss = lossfn(pred, target)
@@ -88,6 +89,7 @@ class SimpleClassifier(torch.nn.Module):
 
         self.lst_epochs = []
         self.lst_loss = []
+        self.lst_dev_accuracy = []
 
     def forward(self, input):
         """
@@ -97,25 +99,41 @@ class SimpleClassifier(torch.nn.Module):
         input = self.output(input)
         return input
 
-    def train(self, data_loader, name, num_epoch=100,):
+    def train(self, data_loader, name, num_epoch=100):
         lossfn = torch.nn.CrossEntropyLoss()
+        best_accuracy = 0
+        best_params = None
+        prev_accuracy = 0
+        prev_prev_accuracy = 0
         for epoch in range(num_epoch):
             total_loss = 0
-            count = 0
-            for n_batch, data in enumerate(data_loader):
-                count+= 1
+            for _, data in enumerate(data_loader):
                 pred = self.forward(data[:, :-1])
                 target = data[:, -1].long()
                 loss = lossfn(pred, target)
-                total_loss+= loss.item()
+                total_loss += loss.item()
                 loss.backward()
                 self.optimizer.step()
             total_loss = total_loss/len(data_loader.dataset)
             self.lst_epochs.append(epoch)
             self.lst_loss.append(total_loss)
+            curr_accuracy = utils.get_dev_accuracy(self)
+            if curr_accuracy > best_accuracy:
+                best_accuracy = curr_accuracy
+                best_params = self.state_dict()
+            self.lst_dev_accuracy.append(curr_accuracy)
             if (epoch % 10 == 0):
-                print(epoch, total_loss)
-        utils.plot_loss_2(self.lst_epochs, self.lst_loss, name)
+                print("Epoch: {}, Loss: {}".format(epoch, total_loss))
+                print("Accuracy on the dev set: ", curr_accuracy)
+                if (curr_accuracy > min(prev_accuracy, prev_prev_accuracy)):
+                    prev_prev_accuracy = prev_accuracy
+                    prev_accuracy = curr_accuracy
+                else:
+                    print("No improvement in accuracy.  Breaking at epoch ", epoch)
+                    break
+        utils.plot_loss_2(self.lst_epochs, self.lst_loss, name+"_loss")
+        utils.plot_devset_accuracy(self.lst_epochs, self.lst_dev_accuracy, name + "_acc")
+        self.load_state_dict(best_params)
 
     def predict(self, data):
         weights = self.forward(data)

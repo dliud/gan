@@ -8,8 +8,8 @@ import utils
 import train_gans
 
 
-def self_learn(dataloaders, num_iters=15, trial=10, alpha=1.1, train_size=250, batch_size=25, start=0, 
-            epoch_per_iter=500, num_gans=1):
+def self_learn(dataloaders, num_iters=15, trial=20, alpha=1.1, train_size=250, batch_size=25, start=0, 
+            epoch_per_iter=600, num_gans=10):
     """
     alpha is "factor" to grow by; e.g. dataset size increases by alpha every iter; num_hidden_layers increases
     by alpha every iter
@@ -36,7 +36,7 @@ def self_learn(dataloaders, num_iters=15, trial=10, alpha=1.1, train_size=250, b
         cur_dataloaders = next_dataloaders
 
 def main():
-    real_size = 250  # number of real images per Dataloader to use at the beginning
+    real_size = 100  # number of real images per Dataloader to use at the beginning
     dataloaders, _ = utils.loadDataset(train_size=real_size, batch_size=25,
                                                         image_path='./mnist/train-images-idx3-ubyte',
                                                         label_path='./mnist/train-labels-idx1-ubyte')
