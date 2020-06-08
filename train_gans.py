@@ -64,13 +64,13 @@ def repeatTrain(dataloaders, trial, epoch_len, alpha,  end, start=0):
         print("Done with {} epochs".format(prev_stop))
 
 
-def main():
+def main(train_size, model_size, trial):
     num_gans = 10
-    dataloaders, labeledDataLoader = utils.loadDataset(train_size=1000, batch_size=25,
+    dataloaders, labeledDataLoader = utils.loadDataset(train_size=train_size, batch_size=25,
                                                         image_path='./mnist/train-images-idx3-ubyte',
                                                         label_path='./mnist/train-labels-idx1-ubyte')
     
-    repeatTrain(dataloaders, trial = 7, epoch_len = 500, end = 2000, alpha = 4)
+    repeatTrain(dataloaders, trial = trial, epoch_len = 500, end = 2000, alpha = model_size)
     """
     lst_saved_models = [None for _ in range(num_gans)]
     
